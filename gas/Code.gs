@@ -14,9 +14,10 @@
 const SHEET_NAME = 'scores';
 const TOP_N = 10;
 
-/** ランキングを返す */
-function doGet() {
-  return json_(buildRanking_(null));
+/** ランキングを返す。?points=N を付けると、その点数が何位にあたるか（rank）も返す */
+function doGet(e) {
+  const p = e && e.parameter ? Number(e.parameter.points) : NaN;
+  return json_(buildRanking_(Number.isFinite(p) ? { points: p } : null));
 }
 
 /** スコアを登録して、登録後のランキングと順位を返す */

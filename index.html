@@ -47,6 +47,8 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
 #overScore{font-family:var(--display);font-size:64px;line-height:1;color:var(--sun);font-variant-numeric:tabular-nums;
   text-shadow:-2px 0 rgba(34,243,255,.85),2px 0 rgba(255,43,214,.85),0 0 24px var(--pink)}
 #overScore::after{content:" PTS";font-size:20px;color:var(--cream)}
+.orank{margin-top:-8px;font-family:var(--display);font-size:13px;letter-spacing:.1em;color:var(--dim)}
+.orank b{font-weight:400;color:var(--cyan)}
 #score.pop,#combo.pop,#overScore.pop{animation:pop .38s cubic-bezier(.2,1.8,.4,1)}
 @keyframes pop{0%{transform:scale(1.5)}100%{transform:scale(1)}}
 .panel{position:absolute;left:0;right:0;bottom:12%;display:flex;flex-direction:column;align-items:center;gap:14px;pointer-events:none;z-index:2;
@@ -106,11 +108,12 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
     <p>左右に動くブロックを、下の段にぴったり重ねよう。正確に重ねるほど高得点、PERFECTを続けると倍率アップ。</p>
     <div class="hint">TAP / SPACE でスタート</div>
     <div class="btnrow"><button id="rankOpen" class="shotbtn" type="button" hidden>ランキング</button></div>
-    <div class="ver">v1.4.3</div>
+    <div class="ver">v1.5.0</div>
   </div>
   <div class="panel" id="over" hidden>
     <h1 id="overTitle">GAME OVER</h1>
     <div id="overScore">0</div>
+    <div id="overRank" class="orank" hidden></div>
     <p id="overText"></p>
     <div class="btnrow"><button id="rankReg" class="shotbtn" type="button" hidden>ランキングに登録</button><button id="shot" class="shotbtn" type="button" hidden>スクショを保存</button></div>
     <div class="hint">TAP / SPACE でもう一回</div>
@@ -304,9 +307,10 @@ function gameOver(){
   $('overText').textContent=`${score}段 ・ PERFECT ${perfects}回 ・ 最大${maxCombo}コンボ`;
   $('combo').classList.remove('on');
   sfx.boom();if(nb&&pts>0)sfx.best();
-  submitted=false;
+  submitted=false;runId++;$('overRank').hidden=true;
   setTimeout(()=>{$('over').hidden=false;$('shot').textContent='スクショを保存';prepareCard();
     const rb=$('rankReg');rb.hidden=!RANK_URL||pts<=0;rb.disabled=false;rb.textContent='ランキングに登録';},700);
+  previewRank();
 }
 // ---- result screenshot: a 1080x1350 card with the score and the whole tower ----
 // The card is rendered in advance when the result appears, so the tap can open the share sheet
@@ -405,13 +409,27 @@ $('rankForm').addEventListener('submit',async e=>{
       body:JSON.stringify({name,points:pts,floors:score,perfects,maxCombo,version:(document.querySelector('.ver')||{}).textContent||''})})).json();
     if(!res.ok){$('rankMsg').textContent='登録できませんでした';}
     else{submitted=true;$('rankForm').hidden=true;const rb=$('rankReg');rb.disabled=true;rb.textContent='登録済み';
-      $('rankMsg').textContent=`${res.players}人中 ${res.rank}位！`;renderRank(res,name);}
+      $('rankMsg').textContent=`${res.players}人中 ${res.rank}位！`;renderRank(res,name);
+      showRank(`ランキング <b>${res.rank}位</b> に登録`);}
   }catch(err){$('rankMsg').textContent='通信に失敗しました。もう一度試してください';}
   finally{rankBusy=false;}
 });
 $('rankOpen').addEventListener('click',e=>{e.currentTarget.blur();openRank('view')});
 $('rankReg').addEventListener('click',e=>{e.currentTarget.blur();if(!submitted)openRank('submit')});
 $('rankClose').addEventListener('click',()=>{$('rank').hidden=true});
+// where this run would place, shown small under the result score (no registration needed)
+let runId=0;
+function showRank(html){const el=$('overRank');el.innerHTML=html;el.hidden=false;}
+async function previewRank(){
+  if(!RANK_URL||pts<=0)return;const id=runId,p=pts;
+  try{
+    const res=await (await fetch(RANK_URL+'?points='+p)).json();if(id!==runId||!res.ok)return;
+    let rank=res.rank;
+    // older Apps Script without ?points support: work it out from the top 10 when possible
+    if(rank==null){const t=res.top||[];if(t.length<10||p>t[t.length-1].points)rank=t.filter(x=>x.points>p).length+1;}
+    if(rank!=null)showRank(`ランキング <b>${rank}位</b> 相当`);
+  }catch(e){}
+}
 function act(){
   if(modalOpen())return;
   if(state==='title'||state==='over'){
