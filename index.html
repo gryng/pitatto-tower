@@ -61,6 +61,27 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
   border:1px solid var(--sun);border-radius:4px;padding:10px 18px;cursor:pointer;text-shadow:0 0 8px rgba(255,230,107,.6);box-shadow:0 0 12px rgba(255,230,107,.3)}
 .shotbtn:disabled{opacity:.7;cursor:progress}
 .shotbtn:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.btnrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.modal{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:rgba(7,2,15,.82);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
+.mcard{width:100%;max-width:360px;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px;
+  background:rgba(20,6,41,.94);border:1px solid var(--cyan);border-radius:6px;padding:18px 16px;box-shadow:0 0 24px rgba(34,243,255,.25)}
+.mcard h2{margin:0;text-align:center;font-family:var(--display);font-weight:400;font-size:28px;letter-spacing:.14em;color:var(--cream);
+  text-shadow:-2px 0 rgba(34,243,255,.9),2px 0 rgba(255,43,214,.9)}
+.mcard label{font-size:12px;color:var(--dim);letter-spacing:.06em}
+.frow{display:flex;gap:8px;margin-top:6px}
+.frow input{flex:1;min-width:0;font:16px var(--body);color:var(--cream);background:rgba(7,2,15,.7);border:1px solid var(--dim);border-radius:4px;padding:8px 10px}
+.frow input:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+.mmsg{margin:0;min-height:1.3em;font-size:13px;color:var(--sun);text-align:center}
+#rankList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+#rankList li{display:grid;grid-template-columns:2em minmax(0,1fr) auto 3.2em;gap:10px;align-items:baseline;padding:6px 8px;border-radius:3px;font-size:14px}
+#rankList .r{font-family:var(--display);color:var(--dim)}
+#rankList li:first-child .r{color:var(--sun)}
+#rankList .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#rankList .p{font-family:var(--display);color:var(--sun)}
+#rankList .f{font-size:12px;color:var(--dim);text-align:right}
+#rankList li.me{background:rgba(255,43,214,.18);outline:1px solid rgba(255,43,214,.6)}
+.shotbtn.ghost{align-self:center;color:var(--dim);border-color:var(--dim);text-shadow:none;box-shadow:none}
 .panel .ver{font-family:var(--display);font-size:11px;letter-spacing:.12em;color:var(--dim);opacity:.8}
 @media (prefers-reduced-motion:reduce){.panel .hint,.panel h1,#score.pop,#combo.pop,#overScore.pop{animation:none}}
 #mute{right:max(14px,calc(env(safe-area-inset-right,0px) + 14px))}
@@ -84,14 +105,27 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
     <h1>ピタッとタワー</h1>
     <p>左右に動くブロックを、下の段にぴったり重ねよう。正確に重ねるほど高得点、PERFECTを続けると倍率アップ。</p>
     <div class="hint">TAP / SPACE でスタート</div>
-    <div class="ver">v1.3.0</div>
+    <div class="btnrow"><button id="rankOpen" class="shotbtn" type="button" hidden>ランキング</button></div>
+    <div class="ver">v1.4.0</div>
   </div>
   <div class="panel" id="over" hidden>
     <h1 id="overTitle">崩れた！</h1>
     <div id="overScore">0</div>
     <p id="overText"></p>
-    <button id="shot" class="shotbtn" type="button" hidden>スクショを保存</button>
+    <div class="btnrow"><button id="rankReg" class="shotbtn" type="button" hidden>ランキングに登録</button><button id="shot" class="shotbtn" type="button" hidden>スクショを保存</button></div>
     <div class="hint">TAP / SPACE でもう一回</div>
+  </div>
+  <div id="rank" class="modal" role="dialog" aria-modal="true" aria-labelledby="rankTitle" hidden>
+    <div class="mcard">
+      <h2 id="rankTitle">RANKING</h2>
+      <form id="rankForm" hidden>
+        <label for="rankName">なまえ（12文字まで）</label>
+        <div class="frow"><input id="rankName" maxlength="12" autocomplete="nickname" enterkeyhint="send"><button class="shotbtn" type="submit">登録</button></div>
+      </form>
+      <p id="rankMsg" class="mmsg"></p>
+      <ol id="rankList"></ol>
+      <button id="rankClose" class="shotbtn ghost" type="button">閉じる</button>
+    </div>
   </div>
 </div>
 
@@ -270,7 +304,9 @@ function gameOver(){
   $('overText').textContent=`${score}段 ・ PERFECT ${perfects}回 ・ 最大${maxCombo}コンボ`;
   $('combo').classList.remove('on');
   sfx.boom();if(nb&&pts>0)sfx.best();
-  setTimeout(()=>{$('over').hidden=false;$('shot').textContent='スクショを保存';prepareCard()},700);
+  submitted=false;
+  setTimeout(()=>{$('over').hidden=false;$('shot').textContent='スクショを保存';prepareCard();
+    const rb=$('rankReg');rb.hidden=!RANK_URL||pts<=0;rb.disabled=false;rb.textContent='ランキングに登録';},700);
 }
 // ---- result screenshot: a 1080x1350 card with the score and the whole tower ----
 // The card is rendered in advance when the result appears, so the tap can open the share sheet
@@ -338,14 +374,53 @@ $('shot').addEventListener('click',async e=>{
   }catch(err){b.textContent='保存できませんでした';}
   finally{b.disabled=false;setTimeout(()=>{if(!b.disabled)b.textContent='スクショを保存'},2400);}
 });
+// ---- online ranking: Google Apps Script web app + spreadsheet (see gas/Code.gs).
+// Leave RANK_URL empty to hide the ranking entirely.
+const RANK_URL='';
+let rankBusy=false,submitted=false,myName='';try{myName=localStorage.getItem('pitatto-name')||''}catch(e){}
+const modalOpen=()=>!$('rank').hidden;
+if(RANK_URL)$('rankOpen').hidden=false;
+function renderRank(res,me){
+  const ol=$('rankList');ol.textContent='';
+  if(!res||!res.top||!res.top.length){$('rankMsg').textContent='まだ記録がありません。最初の挑戦者になろう';return}
+  res.top.forEach((p,k)=>{const li=document.createElement('li');if(me&&String(p.name).toLowerCase()===me.toLowerCase())li.className='me';
+    [['r',k+1],['n',p.name],['p',fmt(p.points)],['f',p.floors+'F']].forEach(([c,t])=>{const sp=document.createElement('span');sp.className=c;sp.textContent=t;li.append(sp)});
+    ol.append(li)});
+}
+async function openRank(mode){
+  $('rank').hidden=false;$('rankForm').hidden=mode!=='submit';$('rankList').textContent='';
+  if(mode==='submit'){$('rankName').value=myName;$('rankMsg').textContent=`${fmt(pts)} PTS ・ ${score}F を登録します`;setTimeout(()=>$('rankName').focus(),50);}
+  else $('rankMsg').textContent='読み込み中…';
+  try{const res=await (await fetch(RANK_URL)).json();if(mode!=='submit')$('rankMsg').textContent=res.players?`${res.players}人が挑戦中`:'';renderRank(res,myName);}
+  catch(e){$('rankMsg').textContent='ランキングを読み込めませんでした';}
+}
+$('rankForm').addEventListener('submit',async e=>{
+  e.preventDefault();if(rankBusy||submitted)return;
+  const name=$('rankName').value.trim().slice(0,12);if(!name){$('rankMsg').textContent='なまえを入れてください';return}
+  myName=name;try{localStorage.setItem('pitatto-name',name)}catch(err){}
+  rankBusy=true;$('rankMsg').textContent='登録中…';
+  try{
+    // text/plain keeps this a "simple" request, so the browser skips the CORS preflight that Apps Script can't answer
+    const res=await (await fetch(RANK_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({name,points:pts,floors:score,perfects,maxCombo,version:(document.querySelector('.ver')||{}).textContent||''})})).json();
+    if(!res.ok){$('rankMsg').textContent='登録できませんでした';}
+    else{submitted=true;$('rankForm').hidden=true;const rb=$('rankReg');rb.disabled=true;rb.textContent='登録済み';
+      $('rankMsg').textContent=`${res.players}人中 ${res.rank}位！`;renderRank(res,name);}
+  }catch(err){$('rankMsg').textContent='通信に失敗しました。もう一度試してください';}
+  finally{rankBusy=false;}
+});
+$('rankOpen').addEventListener('click',e=>{e.currentTarget.blur();openRank('view')});
+$('rankReg').addEventListener('click',e=>{e.currentTarget.blur();if(!submitted)openRank('submit')});
+$('rankClose').addEventListener('click',()=>{$('rank').hidden=true});
 function act(){
+  if(modalOpen())return;
   if(state==='title'||state==='over'){
     if(state==='over'&&$('over').hidden)return;
     audio();sfx.start();$('title').hidden=true;$('over').hidden=true;state='play';reset();updateHud();
   }else drop();
 }
 cv.addEventListener('pointerdown',e=>{e.preventDefault();act()});
-window.addEventListener('keydown',e=>{if(e.code==='KeyM'){audio();setMute(!muted);return}if(e.code==='Space'||e.code==='Enter'){e.preventDefault();act()}});
+window.addEventListener('keydown',e=>{if(modalOpen()){if(e.key==='Escape')$('rank').hidden=true;return}if(e.code==='KeyM'){audio();setMute(!muted);return}if(e.code==='Space'||e.code==='Enter'){e.preventDefault();act()}});
 
 // Each block (with its glow) is rendered once into a small offscreen image and reused every frame,
 // so the glow costs nothing per frame. Blocks never change after landing, so the cache stays tiny.

@@ -10,6 +10,13 @@
 
 - `index.html` … ゲーム本体（HTML / CSS / JavaScript を1ファイルに収録）
 - `bgm.mp3` … BGM「デジタルレース」
+- `gas/Code.gs` … オンラインランキング用の Google Apps Script
+
+## オンラインランキング
+
+`gas/Code.gs` を Google スプレッドシートの Apps Script に貼り付け、ウェブアプリ（実行ユーザー: 自分 / アクセス: 全員）としてデプロイする。
+発行された `…/exec` のURLを `index.html` の `RANK_URL` に設定すると、タイトルとリザルトにランキングのボタンが出る。
+`RANK_URL` が空のときはランキング機能ごと非表示になる。
 
 ## バージョン
 
