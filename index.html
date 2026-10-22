@@ -106,7 +106,7 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
     <p>左右に動くブロックを、下の段にぴったり重ねよう。正確に重ねるほど高得点、PERFECTを続けると倍率アップ。</p>
     <div class="hint">TAP / SPACE でスタート</div>
     <div class="btnrow"><button id="rankOpen" class="shotbtn" type="button" hidden>ランキング</button></div>
-    <div class="ver">v1.4.0</div>
+    <div class="ver">v1.4.1</div>
   </div>
   <div class="panel" id="over" hidden>
     <h1 id="overTitle">崩れた！</h1>
@@ -376,7 +376,7 @@ $('shot').addEventListener('click',async e=>{
 });
 // ---- online ranking: Google Apps Script web app + spreadsheet (see gas/Code.gs).
 // Leave RANK_URL empty to hide the ranking entirely.
-const RANK_URL='';
+const RANK_URL='https://script.google.com/macros/s/AKfycbzVQwsYnyAtv9NPO1iZo86yzTpGMO71F30u2ClrCHbtwgebY1cC1BOtK8Ju-nCtNMP4_A/exec';
 let rankBusy=false,submitted=false,myName='';try{myName=localStorage.getItem('pitatto-name')||''}catch(e){}
 const modalOpen=()=>!$('rank').hidden;
 if(RANK_URL)$('rankOpen').hidden=false;
