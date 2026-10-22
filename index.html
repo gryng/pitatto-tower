@@ -84,7 +84,7 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
     <h1>ピタッとタワー</h1>
     <p>左右に動くブロックを、下の段にぴったり重ねよう。正確に重ねるほど高得点、PERFECTを続けると倍率アップ。</p>
     <div class="hint">TAP / SPACE でスタート</div>
-    <div class="ver">v1.2.0</div>
+    <div class="ver">v1.3.0</div>
   </div>
   <div class="panel" id="over" hidden>
     <h1 id="overTitle">崩れた！</h1>
@@ -215,7 +215,7 @@ function yOf(i){return Ht*0.78-i*H+cam}
 function drop(){
   const top=blocks[blocks.length-1];const i=blocks.length;
   const diff=cur.x-top.x;
-  if(Math.abs(diff)<5*U){ // perfect
+  if(Math.abs(diff)<Math.max(5,speed*1.2)*U){ // perfect: never tighter than about ±20ms, however fast it gets
     cur.x=top.x;combo++;flash=1;
     if(combo>=3){top.w=Math.min(top.w+6*U,baseW());} // reward: regrow
     if(combo>=3) cur.w=Math.min(cur.w+6*U,baseW()),cur.x=Math.max(FX,cur.x-3*U);
@@ -243,7 +243,7 @@ function drop(){
     const ratio=(r-l)/top.w,grade=ratio>=.9?'GREAT':ratio>=.7?'GOOD':'OK',gain=Math.round(100*ratio*heightMult(score));pts+=gain;
     popText(`${grade} +${fmt(gain)}`,(l+r)/2,y-8,18,ratio>=.9?'#22f3ff':'#f2f7ff');shake=Math.max(shake,2);
   }
-  score++;pulse=1;speed=Math.min(2.2+score*0.12,7.5);
+  score++;pulse=1;speed=2.2+3.4*(1-Math.exp(-score/30)); // rises quickly early, then levels off toward 5.6
   if(blocks.length>6)camTarget=(blocks.length-6)*H;
   if(score%10===0){
     const bonus=500*(score/10);pts+=bonus;popText(`BONUS +${fmt(bonus)}`,W/2,Ht*.36+56-cam,20,'#ffe66b');
