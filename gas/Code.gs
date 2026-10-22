@@ -12,7 +12,7 @@
  * ランキングは名前ごとの最高スコアで並べる（名前の大文字小文字は区別しない）。
  */
 const SHEET_NAME = 'scores';
-const TOP_N = 10;
+const TOP_N = 50;
 
 /** ランキングを返す。?points=N を付けると、その点数が何位にあたるか（rank）も返す */
 function doGet(e) {

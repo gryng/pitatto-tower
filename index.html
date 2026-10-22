@@ -66,7 +66,7 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
 .btnrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .modal{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;background:rgba(7,2,15,.82);
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px}
-.mcard{width:100%;max-width:360px;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px;
+.mcard{width:100%;max-width:360px;max-height:100%;overflow:hidden;display:flex;flex-direction:column;gap:12px;
   background:rgba(20,6,41,.94);border:1px solid var(--cyan);border-radius:6px;padding:18px 16px;box-shadow:0 0 24px rgba(34,243,255,.25)}
 .mcard h2{margin:0;text-align:center;font-family:var(--display);font-weight:400;font-size:28px;letter-spacing:.14em;color:var(--cream);
   text-shadow:-2px 0 rgba(34,243,255,.9),2px 0 rgba(255,43,214,.9)}
@@ -75,7 +75,7 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
 .frow input{flex:1;min-width:0;font:16px var(--body);color:var(--cream);background:rgba(7,2,15,.7);border:1px solid var(--dim);border-radius:4px;padding:8px 10px}
 .frow input:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
 .mmsg{margin:0;min-height:1.3em;font-size:13px;color:var(--sun);text-align:center}
-#rankList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+#rankList{list-style:none;margin:0;padding:0;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
 #rankList li{display:grid;grid-template-columns:2em minmax(0,1fr) auto 3.2em;gap:10px;align-items:baseline;padding:6px 8px;border-radius:3px;font-size:14px}
 #rankList .r{font-family:var(--display);color:var(--dim)}
 #rankList li:first-child .r{color:var(--sun)}
@@ -108,7 +108,7 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
     <p>左右に動くブロックを、下の段にぴったり重ねよう。正確に重ねるほど高得点、PERFECTを続けると倍率アップ。</p>
     <div class="hint">TAP / SPACE でスタート</div>
     <div class="btnrow"><button id="rankOpen" class="shotbtn" type="button" hidden>ランキング</button></div>
-    <div class="ver">v1.5.0</div>
+    <div class="ver">v1.5.1</div>
   </div>
   <div class="panel" id="over" hidden>
     <h1 id="overTitle">GAME OVER</h1>
@@ -390,6 +390,7 @@ function renderRank(res,me){
   res.top.forEach((p,k)=>{const li=document.createElement('li');if(me&&String(p.name).toLowerCase()===me.toLowerCase())li.className='me';
     [['r',k+1],['n',p.name],['p',fmt(p.points)],['f',p.floors+'F']].forEach(([c,t])=>{const sp=document.createElement('span');sp.className=c;sp.textContent=t;li.append(sp)});
     ol.append(li)});
+  const mine=ol.querySelector('li.me');if(mine)mine.scrollIntoView({block:'nearest'});
 }
 async function openRank(mode){
   $('rank').hidden=false;$('rankForm').hidden=mode!=='submit';$('rankList').textContent='';
@@ -426,7 +427,7 @@ async function previewRank(){
     const res=await (await fetch(RANK_URL+'?points='+p)).json();if(id!==runId||!res.ok)return;
     let rank=res.rank;
     // older Apps Script without ?points support: work it out from the top 10 when possible
-    if(rank==null){const t=res.top||[];if(t.length<10||p>t[t.length-1].points)rank=t.filter(x=>x.points>p).length+1;}
+    if(rank==null){const t=res.top||[];if(t.length>=(res.players||0)||p>t[t.length-1].points)rank=t.filter(x=>x.points>p).length+1;}
     if(rank!=null)showRank(`ランキング <b>${rank}位</b> 相当`);
   }catch(e){}
 }
