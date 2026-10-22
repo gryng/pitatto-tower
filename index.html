@@ -106,10 +106,10 @@ canvas{display:block;width:100%;height:100%;cursor:pointer}
     <p>左右に動くブロックを、下の段にぴったり重ねよう。正確に重ねるほど高得点、PERFECTを続けると倍率アップ。</p>
     <div class="hint">TAP / SPACE でスタート</div>
     <div class="btnrow"><button id="rankOpen" class="shotbtn" type="button" hidden>ランキング</button></div>
-    <div class="ver">v1.4.1</div>
+    <div class="ver">v1.4.2</div>
   </div>
   <div class="panel" id="over" hidden>
-    <h1 id="overTitle">崩れた！</h1>
+    <h1 id="overTitle">FINISHED!!</h1>
     <div id="overScore">0</div>
     <p id="overText"></p>
     <div class="btnrow"><button id="rankReg" class="shotbtn" type="button" hidden>ランキングに登録</button><button id="shot" class="shotbtn" type="button" hidden>スクショを保存</button></div>
@@ -300,7 +300,7 @@ function gameOver(){
   const nb=pts>bestPts;if(nb){bestPts=pts;try{localStorage.setItem('pitatto-best-pts',bestPts)}catch(e){}}
   lastNb=nb;
   $('bestv').textContent=fmt(bestPts);rShown=0;$('overScore').textContent='0';
-  $('overTitle').textContent=nb&&pts>0?'新記録！':'崩れた！';
+  $('overTitle').textContent=nb&&pts>0?'新記録！':'FINISHED!!';
   $('overText').textContent=`${score}段 ・ PERFECT ${perfects}回 ・ 最大${maxCombo}コンボ`;
   $('combo').classList.remove('on');
   sfx.boom();if(nb&&pts>0)sfx.best();
